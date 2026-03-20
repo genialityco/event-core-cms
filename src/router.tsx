@@ -1,0 +1,28 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom'
+import AppLayout from '@/components/layout/AppLayout'
+import OrganizationsPage from '@/pages/organizations/OrganizationsPage'
+import OrganizationDetailPage from '@/pages/organizations/OrganizationDetailPage'
+import EventsPage from '@/pages/events/EventsPage'
+import EventFormConfigPage from '@/pages/events/EventFormConfigPage'
+import HotelsPage from '@/pages/hotels/HotelsPage'
+import AgendaPage from '@/pages/agenda/AgendaPage'
+import SpeakersPage from '@/pages/speakers/SpeakersPage'
+import UsefulInfoPage from '@/pages/useful-info/UsefulInfoPage'
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppLayout />,
+    children: [
+      { index: true, element: <Navigate to="/organizations" replace /> },
+      { path: 'organizations', element: <OrganizationsPage /> },
+      { path: 'organizations/:id', element: <OrganizationDetailPage /> },
+      { path: 'organizations/:id/events', element: <EventsPage /> },
+      { path: 'organizations/:id/events/:eventId/traveler-config', element: <EventFormConfigPage /> },
+      { path: 'organizations/:id/events/:eventId/hotels', element: <HotelsPage /> },
+      { path: 'organizations/:id/events/:eventId/agenda', element: <AgendaPage /> },
+      { path: 'organizations/:id/events/:eventId/speakers', element: <SpeakersPage /> },
+      { path: 'organizations/:id/events/:eventId/useful-info', element: <UsefulInfoPage /> },
+    ],
+  },
+])
