@@ -13,12 +13,20 @@ export interface OrganizationFeatures {
   attendance: boolean
   usefulInfo: boolean
   photos: boolean
+  /** Tab que se muestra por defecto al iniciar sesión. null = primer tab habilitado. */
+  defaultModule?: string | null
 }
 
 export interface OrganizationBranding {
   primaryColor: string
+  primaryDarkColor?: string
   secondaryColor: string
+  /** Fondo del tab bar inferior */
   tabBarColor?: string
+  /** Color de ícono+texto del tab activo. null/vacío = usa primaryColor */
+  tabBarActiveColor?: string
+  /** Color de ícono+texto de tabs inactivos */
+  tabBarInactiveColor?: string
   logoUrl?: string
   appName?: string
   fontFamily?: string

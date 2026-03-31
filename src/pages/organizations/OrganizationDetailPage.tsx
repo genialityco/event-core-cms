@@ -5,7 +5,80 @@ import type { OrganizationFeatures } from '@/types/organization'
 import { ChevronLeft, Save, CheckCircle2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-const FEATURE_LABELS: Record<keyof OrganizationFeatures, string> = {
+// ─── Shared sub-components ────────────────────────────────────────────────────
+
+function ColorInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <input
+        type="color"
+        value={value.startsWith('#') && value.length >= 7 ? value.slice(0, 7) : '#000000'}
+        onChange={(e) => onChange(e.target.value)}
+        style={{ width: 36, height: 36, padding: 3, border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}
+      />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{ fontFamily: 'monospace', flex: 1 }}
+        placeholder={placeholder ?? '#000000'}
+      />
+    </div>
+  )
+}
+
+function TabBarPreview({ branding }: { branding: import('@/types/organization').OrganizationBranding }) {
+  const bg = branding.tabBarColor ?? '#ffffff'
+  const active = branding.tabBarActiveColor ?? branding.primaryColor ?? '#031249'
+  const inactive = branding.tabBarInactiveColor ?? '#9E9E9E'
+  const tabs = ['Agenda', 'Speakers', 'Hoteles', 'Fotos']
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Vista previa</p>
+      <div style={{
+        background: bg,
+        borderRadius: 12,
+        border: '1px solid var(--border)',
+        display: 'flex',
+        overflow: 'hidden',
+        boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
+      }}>
+        {tabs.map((label, i) => {
+          const isActive = i === 0
+          const color = isActive ? active : inactive
+          return (
+            <div key={label} style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '10px 4px 8px',
+              position: 'relative',
+              gap: 3,
+            }}>
+              {isActive && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 8, right: 8,
+                  height: 2,
+                  borderRadius: 2,
+                  background: active,
+                }} />
+              )}
+              <div style={{ width: 20, height: 20, borderRadius: 4, background: color, opacity: 0.9 }} />
+              <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 400, color }}>{label}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+type BooleanFeatureKey = keyof Omit<OrganizationFeatures, 'defaultModule'>
+
+const FEATURE_LABELS: Record<BooleanFeatureKey, string> = {
   agenda:      'Agenda',
   speakers:    'Speakers',
   survey:      'Encuestas',
@@ -21,6 +94,17 @@ const FEATURE_LABELS: Record<keyof OrganizationFeatures, string> = {
   usefulInfo:  'Info útil',
   photos:      'Fotos',
 }
+
+// Módulos que tienen tab propio en la app móvil — candidatos a "módulo por defecto"
+const TAB_MODULES: { key: BooleanFeatureKey; label: string }[] = [
+  { key: 'agenda',      label: 'Agenda' },
+  { key: 'speakers',    label: 'Speakers' },
+  { key: 'traveler',    label: 'Viajes' },
+  { key: 'hotels',      label: 'Hoteles' },
+  { key: 'attendance',  label: 'Asistencia' },
+  { key: 'usefulInfo',  label: 'Info útil' },
+  { key: 'photos',      label: 'Fotos' },
+]
 
 type Tab = 'general' | 'features' | 'branding' | 'events'
 
@@ -190,39 +274,64 @@ export default function OrganizationDetailPage() {
 
       {/* Tab: Features */}
       {tab === 'features' && features && (
-        <div className="card" style={{ maxWidth: 480 }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
-            <h3>Módulos activos</h3>
-            <p style={{ fontSize: '0.8125rem', marginTop: 2 }}>
-              Los cambios se reflejan inmediatamente en la app móvil.
-            </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 480 }}>
+          <div className="card">
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+              <h3>Módulos activos</h3>
+              <p style={{ fontSize: '0.8125rem', marginTop: 2 }}>
+                Los cambios se reflejan inmediatamente en la app móvil.
+              </p>
+            </div>
+            <div style={{ padding: '8px 0' }}>
+              {(Object.keys(FEATURE_LABELS) as BooleanFeatureKey[]).map((key, i, arr) => (
+                <div
+                  key={key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 20px',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                    {FEATURE_LABELS[key]}
+                  </span>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={!!features[key]}
+                      onChange={() => setFeatures((f) => f ? { ...f, [key]: !f[key] } : f)}
+                    />
+                    <span className="toggle-track" />
+                    <span className="toggle-thumb" />
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ padding: '8px 0' }}>
-            {(Object.keys(features) as (keyof OrganizationFeatures)[]).map((key, i, arr) => (
-              <div
-                key={key}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 20px',
-                  borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                }}
-              >
-                <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                  {FEATURE_LABELS[key]}
-                </span>
-                <label className="toggle">
-                  <input
-                    type="checkbox"
-                    checked={features[key]}
-                    onChange={() => setFeatures((f) => f ? { ...f, [key]: !f[key] } : f)}
-                  />
-                  <span className="toggle-track" />
-                  <span className="toggle-thumb" />
-                </label>
-              </div>
-            ))}
+
+          <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <h3 style={{ marginBottom: 2 }}>Módulo por defecto</h3>
+              <p style={{ fontSize: '0.8125rem', margin: 0 }}>
+                Tab que ve el usuario al iniciar sesión. Solo se muestran los módulos habilitados arriba.
+              </p>
+            </div>
+            <select
+              value={features.defaultModule ?? ''}
+              onChange={(e) =>
+                setFeatures((f) => f ? { ...f, defaultModule: e.target.value || null } : f)
+              }
+              style={{ maxWidth: 240 }}
+            >
+              <option value="">— Primer tab habilitado —</option>
+              {TAB_MODULES.filter((m) => features[m.key]).map((m) => (
+                <option key={m.key} value={m.key}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       )}
@@ -238,55 +347,55 @@ export default function OrganizationDetailPage() {
             />
           </Field>
           <hr className="divider" />
-          <h3>Colores</h3>
-          <div style={{ display: 'flex', gap: 16 }}>
+          <h3>Colores generales</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Field label="Color primario">
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  value={branding.primaryColor}
-                  onChange={(e) => setBranding((b) => b ? { ...b, primaryColor: e.target.value } : b)}
-                  style={{ width: 36, height: 36, padding: 3, border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}
-                />
-                <input
-                  value={branding.primaryColor}
-                  onChange={(e) => setBranding((b) => b ? { ...b, primaryColor: e.target.value } : b)}
-                  style={{ fontFamily: 'monospace', flex: 1 }}
-                />
-              </div>
+              <ColorInput
+                value={branding.primaryColor}
+                onChange={(v) => setBranding((b) => b ? { ...b, primaryColor: v } : b)}
+              />
+            </Field>
+            <Field label="Color primario oscuro">
+              <ColorInput
+                value={branding.primaryDarkColor ?? '#020d30'}
+                onChange={(v) => setBranding((b) => b ? { ...b, primaryDarkColor: v } : b)}
+              />
             </Field>
             <Field label="Color secundario">
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  value={branding.secondaryColor}
-                  onChange={(e) => setBranding((b) => b ? { ...b, secondaryColor: e.target.value } : b)}
-                  style={{ width: 36, height: 36, padding: 3, border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}
-                />
-                <input
-                  value={branding.secondaryColor}
-                  onChange={(e) => setBranding((b) => b ? { ...b, secondaryColor: e.target.value } : b)}
-                  style={{ fontFamily: 'monospace', flex: 1 }}
-                />
-              </div>
+              <ColorInput
+                value={branding.secondaryColor}
+                onChange={(v) => setBranding((b) => b ? { ...b, secondaryColor: v } : b)}
+              />
             </Field>
           </div>
-          <Field label="Color barra de tabs (app)">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="color"
+          <hr className="divider" />
+          <h3>Tab bar (app móvil)</h3>
+          <p style={{ fontSize: '0.8125rem', margin: '0 0 12px' }}>
+            Configura el aspecto de la barra de navegación inferior.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Field label="Fondo del tab bar">
+              <ColorInput
                 value={branding.tabBarColor ?? '#ffffff'}
-                onChange={(e) => setBranding((b) => b ? { ...b, tabBarColor: e.target.value } : b)}
-                style={{ width: 36, height: 36, padding: 3, border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}
+                onChange={(v) => setBranding((b) => b ? { ...b, tabBarColor: v } : b)}
               />
-              <input
-                value={branding.tabBarColor ?? '#ffffff'}
-                onChange={(e) => setBranding((b) => b ? { ...b, tabBarColor: e.target.value } : b)}
-                style={{ fontFamily: 'monospace', flex: 1 }}
-                placeholder="#ffffff"
+            </Field>
+            <Field label="Color tab activo">
+              <ColorInput
+                value={branding.tabBarActiveColor ?? branding.primaryColor}
+                onChange={(v) => setBranding((b) => b ? { ...b, tabBarActiveColor: v } : b)}
+                placeholder="Default: color primario"
               />
-            </div>
-          </Field>
+            </Field>
+            <Field label="Color tabs inactivos">
+              <ColorInput
+                value={branding.tabBarInactiveColor ?? '#9E9E9E'}
+                onChange={(v) => setBranding((b) => b ? { ...b, tabBarInactiveColor: v } : b)}
+              />
+            </Field>
+          </div>
+          {/* Preview del tab bar */}
+          <TabBarPreview branding={branding} />
           <hr className="divider" />
           <Field label="URL del logo">
             <input
