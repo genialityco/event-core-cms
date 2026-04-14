@@ -1,10 +1,13 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { ChevronLeft, Plus, Pencil, Trash2, Eye, EyeOff, BookOpen } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ChevronLeft, Plus, Pencil, Trash2, Eye, EyeOff, BookOpen, ImageIcon } from 'lucide-react'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { storage } from '@/lib/firebase'
 import { usefulInfoService } from '@/services/useful-info'
 import { eventsService } from '@/services/events'
 import { organizationsService } from '@/services/organizations'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import type { UsefulInfo } from '@/types/useful-info'
 import { CATEGORIES } from '@/types/useful-info'
 
@@ -26,6 +29,9 @@ export default function UsefulInfoPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<Partial<UsefulInfo>>(EMPTY_FORM)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [langTab, setLangTab] = useState<'es' | 'en'>('es')
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   const { data: org } = useQuery({
     queryKey: ['organizations', orgId],
@@ -85,14 +91,17 @@ export default function UsefulInfoPage() {
   const handleEdit = (item: UsefulInfo) => {
     setForm({
       title: item.title,
+      title_en: item.title_en ?? '',
       category: item.category ?? 'general',
       icon: item.icon ?? '',
       content: item.content ?? '',
+      content_en: item.content_en ?? '',
       coverImageUrl: item.coverImageUrl ?? '',
       isPublished: item.isPublished ?? false,
       order: item.order ?? 0,
     })
     setEditingId(item._id)
+    setLangTab('es')
     setShowForm(true)
   }
 
@@ -111,11 +120,29 @@ export default function UsefulInfoPage() {
     }
   }
 
+  const handleCoverUpload = async (file: File) => {
+    setUploadingCover(true)
+    try {
+      const fileName = `useful-info/covers/${Date.now()}_${file.name}`
+      const storageRef = ref(storage, fileName)
+      await uploadBytes(storageRef, file)
+      const url = await getDownloadURL(storageRef)
+      setForm((f) => ({ ...f, coverImageUrl: url }))
+    } catch (err) {
+      console.error('Error subiendo portada:', err)
+    } finally {
+      setUploadingCover(false)
+    }
+  }
+
   const getCategoryLabel = (key: string) => CATEGORIES.find((c) => c.key === key)?.label ?? key
   const getCategoryIcon = (item: UsefulInfo) => {
     if (item.icon) return item.icon
     return CATEGORIES.find((c) => c.key === item.category)?.icon ?? '📌'
   }
+
+  // Strip HTML tags for preview in list
+  const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').slice(0, 100)
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
@@ -152,19 +179,53 @@ export default function UsefulInfoPage() {
 
       {/* Form */}
       {showForm && (
-        <div className="card" style={{ padding: 20, marginBottom: 20, maxWidth: 680 }}>
+        <div className="card" style={{ padding: 20, marginBottom: 20, maxWidth: 720 }}>
           <h3 style={{ marginBottom: 16 }}>{editingId ? 'Editar artículo' : 'Nuevo artículo'}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Tabs idioma */}
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['es', 'en'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => setLangTab(lang)}
+                  style={{
+                    padding: '4px 16px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border)',
+                    background: langTab === lang ? 'var(--accent)' : 'var(--surface)',
+                    color: langTab === lang ? '#fff' : 'var(--text-secondary)',
+                    fontWeight: 600,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {lang === 'es' ? '🇪🇸 Español' : '🇺🇸 English'}
+                </button>
+              ))}
+            </div>
+
+            {/* Título */}
             <div>
-              <label className="field-label">Título *</label>
+              <label className="field-label">
+                {langTab === 'es' ? 'Título *' : 'Title (English)'}
+              </label>
               <input
-                value={form.title ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                placeholder="Ej: Requisitos de visa para Colombia"
-                autoFocus
+                value={(langTab === 'es' ? form.title : form.title_en) ?? ''}
+                onChange={(e) =>
+                  setForm((f) =>
+                    langTab === 'es'
+                      ? { ...f, title: e.target.value }
+                      : { ...f, title_en: e.target.value }
+                  )
+                }
+                placeholder={langTab === 'es' ? 'Ej: Requisitos de visa para Colombia' : 'e.g. Visa requirements for Colombia'}
+                autoFocus={langTab === 'es'}
               />
             </div>
 
+            {/* Categoría + Icono + Orden */}
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 2 }}>
                 <label className="field-label">Categoría</label>
@@ -203,36 +264,73 @@ export default function UsefulInfoPage() {
               </div>
             </div>
 
+            {/* Imagen de portada */}
+            <div>
+              <label className="field-label">Imagen de portada (opcional)</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <input
+                    value={form.coverImageUrl ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
+                    placeholder="https://... o sube un archivo"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ flexShrink: 0, height: 36 }}
+                  disabled={uploadingCover}
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  <ImageIcon size={13} />
+                  {uploadingCover ? ' Subiendo...' : ' Subir'}
+                </button>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleCoverUpload(file)
+                    e.target.value = ''
+                  }}
+                />
+              </div>
+              {form.coverImageUrl && (
+                <img
+                  src={form.coverImageUrl}
+                  alt="portada"
+                  style={{ marginTop: 8, height: 100, borderRadius: 8, objectFit: 'cover' }}
+                />
+              )}
+            </div>
+
+            {/* Editor de contenido */}
             <div>
               <label className="field-label">
-                Contenido
-                <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 8, fontSize: '0.75rem' }}>
-                  Soporta # Título, ## Subtítulo, **negrita**, - listas
-                </span>
+                {langTab === 'es' ? 'Contenido' : 'Content (English)'}
               </label>
-              <textarea
-                value={form.content ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-                placeholder={'# Título principal\n\n## Subtítulo\n\nEscribe el contenido aquí...\n\n- Punto uno\n- Punto dos\n\n**Texto en negrita**'}
-                style={{
-                  width: '100%', height: 280, padding: '10px 12px',
-                  border: '1px solid var(--border)', borderRadius: 8,
-                  background: 'var(--surface)', color: 'var(--text-primary)',
-                  fontFamily: 'monospace', fontSize: '0.875rem', lineHeight: 1.6,
-                  resize: 'vertical', boxSizing: 'border-box',
-                }}
-              />
+              {langTab === 'es' ? (
+                <RichTextEditor
+                  key="content-es"
+                  value={form.content ?? ''}
+                  onChange={(html) => setForm((f) => ({ ...f, content: html }))}
+                  uploadPath={`useful-info/${eventId}`}
+                  placeholder="Escribe el contenido en español..."
+                />
+              ) : (
+                <RichTextEditor
+                  key="content-en"
+                  value={form.content_en ?? ''}
+                  onChange={(html) => setForm((f) => ({ ...f, content_en: html }))}
+                  uploadPath={`useful-info/${eventId}`}
+                  placeholder="Write the content in English..."
+                />
+              )}
             </div>
 
-            <div>
-              <label className="field-label">URL de imagen de portada (opcional)</label>
-              <input
-                value={form.coverImageUrl ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
-
+            {/* Publicado */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <label className="toggle">
                 <input
@@ -307,7 +405,7 @@ export default function UsefulInfoPage() {
                 </div>
                 {item.content && (
                   <p style={{ margin: '3px 0 0', fontSize: '0.8125rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 480 }}>
-                    {item.content.replace(/[#*\-]/g, '').slice(0, 100)}
+                    {stripHtml(item.content)}
                   </p>
                 )}
               </div>

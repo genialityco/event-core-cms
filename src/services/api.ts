@@ -2,7 +2,7 @@ import axios from 'axios'
 import { auth } from '@/lib/firebase'
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_URL ?? 'https://event-core-api-i3sih.ondigitalocean.app',
 })
 
 api.interceptors.request.use(async (config) => {

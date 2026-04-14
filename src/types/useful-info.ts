@@ -3,9 +3,11 @@ export interface UsefulInfo {
   eventId: string
   organizationId: string
   title: string
+  title_en?: string
   category: string
   icon: string
   content: string
+  content_en?: string
   coverImageUrl?: string
   isPublished: boolean
   order: number

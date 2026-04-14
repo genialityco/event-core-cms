@@ -1,6 +1,7 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { Building2, LayoutDashboard } from 'lucide-react'
+import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom'
+import { Building2, LayoutDashboard, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
   { to: '/organizations', label: 'Organizaciones', icon: Building2 },
@@ -8,6 +9,10 @@ const navItems = [
 
 export default function AppLayout() {
   const location = useLocation()
+  const { user, loading, logout } = useAuth()
+
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
 
   const currentNav = navItems.find((n) => location.pathname.startsWith(n.to))
 
@@ -77,10 +82,23 @@ export default function AppLayout() {
         <div style={{
           padding: '12px 16px',
           borderTop: '1px solid var(--border)',
-          fontSize: '0.75rem',
-          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}>
-          v1.0.0
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {user.email}
+          </span>
+          <button
+            onClick={logout}
+            title="Cerrar sesión"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-muted)', padding: 4, display: 'flex',
+            }}
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </aside>
 

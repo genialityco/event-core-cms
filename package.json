@@ -12,6 +12,11 @@
   "dependencies": {
     "@tanstack/react-query": "^5.91.3",
     "@tanstack/react-router": "^1.168.1",
+    "@tiptap/extension-image": "^3.22.3",
+    "@tiptap/extension-placeholder": "^3.22.3",
+    "@tiptap/pm": "^3.22.3",
+    "@tiptap/react": "^3.22.3",
+    "@tiptap/starter-kit": "^3.22.3",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
     "firebase": "^12.11.0",

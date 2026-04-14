@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsService } from '@/services/events'
 import { organizationsService } from '@/services/organizations'
-import { ChevronLeft, Plus, Radio, Settings, BedDouble, CalendarDays, Users, Info } from 'lucide-react'
+import { ChevronLeft, Plus, Radio, Settings, BedDouble, CalendarDays, Users, Info, Luggage } from 'lucide-react'
 import { useState } from 'react'
 import type { Event } from '@/types/event'
 
@@ -191,11 +191,19 @@ export default function EventsPage() {
                     </button>
                   )}
                   <Link
+                    to={`/organizations/${orgId}/events/${event._id}/travelers`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <button className="btn" style={{ fontSize: '0.8125rem' }} title="Ver registros de viajeros">
+                      <Luggage size={13} /> Viajeros
+                    </button>
+                  </Link>
+                  <Link
                     to={`/organizations/${orgId}/events/${event._id}/traveler-config`}
                     style={{ textDecoration: 'none' }}
                   >
                     <button className="btn" style={{ fontSize: '0.8125rem' }} title="Configurar formulario de viajero">
-                      <Settings size={13} /> Traveler
+                      <Settings size={13} /> Config viajero
                     </button>
                   </Link>
                   <Link
