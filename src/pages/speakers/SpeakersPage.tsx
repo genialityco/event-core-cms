@@ -1,7 +1,9 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { ChevronLeft, Plus, Pencil, Trash2, Users } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ChevronLeft, Plus, Pencil, Trash2, Users, Upload } from 'lucide-react'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { storage } from '@/lib/firebase'
 import { speakersService, type Speaker } from '@/services/speakers'
 import { eventsService } from '@/services/events'
 import { organizationsService } from '@/services/organizations'
@@ -27,6 +29,23 @@ function SpeakerForm({
   isPending: boolean
 }) {
   const [form, setForm] = useState(initial)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true)
+    try {
+      const fileName = `speakers/${Date.now()}_${file.name}`
+      const storageRef = ref(storage, fileName)
+      await uploadBytes(storageRef, file)
+      const url = await getDownloadURL(storageRef)
+      setForm((f) => ({ ...f, imageUrl: url }))
+    } catch (err) {
+      console.error('Error subiendo imagen:', err)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div
@@ -80,11 +99,35 @@ function SpeakerForm({
           />
         </div>
         <div>
-          <label className="field-label">URL de foto</label>
+          <label className="field-label">Foto del conferencista</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={form.imageUrl}
+              onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
+              placeholder="https://... o sube una imagen"
+              style={{ flex: 1 }}
+            />
+            <button
+              type="button"
+              className="btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              <Upload size={14} /> {uploading ? 'Subiendo...' : 'Subir'}
+            </button>
+          </div>
           <input
-            value={form.imageUrl}
-            onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-            placeholder="https://..."
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleImageUpload(file)
+              e.target.value = ''
+            }}
+            disabled={uploading}
           />
           {form.imageUrl && (
             <img
@@ -115,11 +158,11 @@ function SpeakerForm({
           <button
             className="btn btn-primary"
             onClick={() => onSave(form)}
-            disabled={!form.names || isPending}
+            disabled={!form.names || isPending || uploading}
           >
             {isPending ? 'Guardando...' : 'Guardar'}
           </button>
-          <button className="btn" onClick={onCancel}>
+          <button className="btn" onClick={onCancel} disabled={uploading}>
             Cancelar
           </button>
         </div>
