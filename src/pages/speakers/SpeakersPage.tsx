@@ -1,21 +1,22 @@
-import { useParams, Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useRef } from 'react'
-import { ChevronLeft, Plus, Pencil, Trash2, Users, Upload } from 'lucide-react'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { storage } from '@/lib/firebase'
-import { speakersService, type Speaker } from '@/services/speakers'
-import { eventsService } from '@/services/events'
-import { organizationsService } from '@/services/organizations'
+import { useParams, Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useRef } from "react";
+import { ChevronLeft, Plus, Pencil, Trash2, Users, Upload } from "lucide-react";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
+import { speakersService, type Speaker } from "@/services/speakers";
+import { eventsService } from "@/services/events";
+import { organizationsService } from "@/services/organizations";
 
 const EMPTY_FORM = {
-  names: '',
-  role: '',
-  organization: '',
-  description: '',
-  imageUrl: '',
+  names: "",
+  role: "",
+  organization: "",
+  description: "",
+  descriptionEN: "",
+  imageUrl: "",
   isInternational: false,
-}
+};
 
 function SpeakerForm({
   initial,
@@ -23,44 +24,44 @@ function SpeakerForm({
   onCancel,
   isPending,
 }: {
-  initial: typeof EMPTY_FORM
-  onSave: (data: typeof EMPTY_FORM) => void
-  onCancel: () => void
-  isPending: boolean
+  initial: typeof EMPTY_FORM;
+  onSave: (data: typeof EMPTY_FORM) => void;
+  onCancel: () => void;
+  isPending: boolean;
 }) {
-  const [form, setForm] = useState(initial)
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [form, setForm] = useState(initial);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = async (file: File) => {
-    setUploading(true)
+    setUploading(true);
     try {
-      const fileName = `speakers/${Date.now()}_${file.name}`
-      const storageRef = ref(storage, fileName)
-      await uploadBytes(storageRef, file)
-      const url = await getDownloadURL(storageRef)
-      setForm((f) => ({ ...f, imageUrl: url }))
+      const fileName = `speakers/${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, fileName);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setForm((f) => ({ ...f, imageUrl: url }));
     } catch (err) {
-      console.error('Error subiendo imagen:', err)
+      console.error("Error subiendo imagen:", err);
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   return (
     <div
       style={{
-        background: 'var(--bg-secondary, #f8fafc)',
-        border: '1px solid var(--border)',
+        background: "var(--bg-secondary, #f8fafc)",
+        border: "1px solid var(--border)",
         borderRadius: 10,
         padding: 20,
         marginBottom: 20,
       }}
     >
       <h3 style={{ marginBottom: 16, marginTop: 0 }}>
-        {initial.names ? 'Editar conferencista' : 'Nuevo conferencista'}
+        {initial.names ? "Editar conferencista" : "Nuevo conferencista"}
       </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
           <label className="field-label">Nombre completo *</label>
           <input
@@ -70,7 +71,7 @@ function SpeakerForm({
             autoFocus
           />
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: "flex", gap: 12 }}>
           <div style={{ flex: 1 }}>
             <label className="field-label">Cargo / Posición</label>
             <input
@@ -83,27 +84,45 @@ function SpeakerForm({
             <label className="field-label">Empresa / Medio</label>
             <input
               value={form.organization}
-              onChange={(e) => setForm((f) => ({ ...f, organization: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, organization: e.target.value }))
+              }
               placeholder="Televisión Azteca, TV Globo..."
             />
           </div>
         </div>
         <div>
-          <label className="field-label">Biografía</label>
+          <label className="field-label">Biografía (Español)</label>
           <textarea
             value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            placeholder="Breve descripción o biografía"
+            onChange={(e) =>
+              setForm((f) => ({ ...f, description: e.target.value }))
+            }
+            placeholder="Breve descripción o biografía en Español"
             rows={3}
-            style={{ width: '100%', resize: 'vertical' }}
+            style={{ width: "100%", resize: "vertical" }}
+          />
+        </div>
+        <div>
+          <label className="field-label">Biografía (Inglés)</label>
+          <textarea
+            value={form.descriptionEN}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, descriptionEN: e.target.value }))
+            }
+            placeholder="Breve descripción o biografía en Inglés"
+            rows={3}
+            style={{ width: "100%", resize: "vertical" }}
           />
         </div>
         <div>
           <label className="field-label">Foto del conferencista</label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <input
               value={form.imageUrl}
-              onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, imageUrl: e.target.value }))
+              }
               placeholder="https://... o sube una imagen"
               style={{ flex: 1 }}
             />
@@ -112,20 +131,20 @@ function SpeakerForm({
               className="btn"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              style={{ whiteSpace: 'nowrap' }}
+              style={{ whiteSpace: "nowrap" }}
             >
-              <Upload size={14} /> {uploading ? 'Subiendo...' : 'Subir'}
+              <Upload size={14} /> {uploading ? "Subiendo..." : "Subir"}
             </button>
           </div>
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
             onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) handleImageUpload(file)
-              e.target.value = ''
+              const file = e.target.files?.[0];
+              if (file) handleImageUpload(file);
+              e.target.value = "";
             }}
             disabled={uploading}
           />
@@ -134,33 +153,43 @@ function SpeakerForm({
               src={form.imageUrl}
               alt="preview"
               style={{
-                width: 64, height: 64, borderRadius: '50%',
-                objectFit: 'cover', marginTop: 8,
-                border: '2px solid var(--border)',
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                objectFit: "cover",
+                marginTop: 8,
+                border: "2px solid var(--border)",
               }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
             />
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <input
             id="isInternational"
             type="checkbox"
             checked={form.isInternational}
-            onChange={(e) => setForm((f) => ({ ...f, isInternational: e.target.checked }))}
-            style={{ width: 16, height: 16, cursor: 'pointer' }}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, isInternational: e.target.checked }))
+            }
+            style={{ width: 16, height: 16, cursor: "pointer" }}
           />
-          <label htmlFor="isInternational" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>
+          <label
+            htmlFor="isInternational"
+            style={{ fontSize: "0.875rem", cursor: "pointer" }}
+          >
             Internacional
           </label>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
           <button
             className="btn btn-primary"
             onClick={() => onSave(form)}
             disabled={!form.names || isPending || uploading}
           >
-            {isPending ? 'Guardando...' : 'Guardar'}
+            {isPending ? "Guardando..." : "Guardar"}
           </button>
           <button className="btn" onClick={onCancel} disabled={uploading}>
             Cancelar
@@ -168,96 +197,119 @@ function SpeakerForm({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function getInitials(name: string) {
   return name
-    .split(' ')
+    .split(" ")
     .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('')
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 export default function SpeakersPage() {
-  const { id: orgId, eventId } = useParams<{ id: string; eventId: string }>()
-  const queryClient = useQueryClient()
+  const { id: orgId, eventId } = useParams<{ id: string; eventId: string }>();
+  const queryClient = useQueryClient();
 
-  const [showCreate, setShowCreate] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const { data: org } = useQuery({
-    queryKey: ['organizations', orgId],
+    queryKey: ["organizations", orgId],
     queryFn: () => organizationsService.getById(orgId!),
     enabled: !!orgId,
-  })
+  });
 
   const { data: event } = useQuery({
-    queryKey: ['events', eventId],
+    queryKey: ["events", eventId],
     queryFn: () => eventsService.getById(eventId!),
     enabled: !!eventId,
-  })
+  });
 
   const { data: speakers = [], isLoading } = useQuery<Speaker[]>({
-    queryKey: ['speakers', eventId],
+    queryKey: ["speakers", eventId],
     queryFn: () => speakersService.getByEvent(eventId!),
     enabled: !!eventId,
-  })
+  });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['speakers', eventId] })
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["speakers", eventId] });
 
   const createMutation = useMutation({
     mutationFn: (body: Partial<Speaker>) =>
       speakersService.create({ ...body, eventId }),
     onSuccess: () => {
-      invalidate()
-      setShowCreate(false)
+      invalidate();
+      setShowCreate(false);
     },
-  })
+  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Partial<Speaker> }) =>
       speakersService.update(id, body),
     onSuccess: () => {
-      invalidate()
-      setEditingId(null)
+      invalidate();
+      setEditingId(null);
     },
-  })
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => speakersService.remove(id),
     onSuccess: () => {
-      invalidate()
-      setDeleteConfirmId(null)
+      invalidate();
+      setDeleteConfirmId(null);
     },
-  })
+  });
 
   return (
     <>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 24,
+        }}
+      >
         <Link
           to={`/organizations/${orgId}/events`}
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 32, height: 32, borderRadius: 8,
-            border: '1px solid var(--border)', color: 'var(--text-secondary)',
-            textDecoration: 'none',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
+            textDecoration: "none",
           }}
         >
           <ChevronLeft size={16} />
         </Link>
         <div>
           <h1 style={{ marginBottom: 1 }}>Conferencistas</h1>
-          <p style={{ fontSize: '0.8125rem', margin: 0, color: 'var(--text-secondary)' }}>
-            {org?.name}{event ? ` · ${event.name}` : ''}
+          <p
+            style={{
+              fontSize: "0.8125rem",
+              margin: 0,
+              color: "var(--text-secondary)",
+            }}
+          >
+            {org?.name}
+            {event ? ` · ${event.name}` : ""}
           </p>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: "auto" }}>
           <button
             className="btn btn-primary"
-            onClick={() => { setShowCreate(true); setEditingId(null) }}
+            onClick={() => {
+              setShowCreate(true);
+              setEditingId(null);
+            }}
             disabled={showCreate}
           >
             <Plus size={14} /> Nuevo conferencista
@@ -277,31 +329,44 @@ export default function SpeakersPage() {
 
       {/* List */}
       {isLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {[1, 2, 3].map((i) => (
-            <div key={i} style={{ height: 72, background: '#f1f5f9', borderRadius: 10 }} />
+            <div
+              key={i}
+              style={{ height: 72, background: "#f1f5f9", borderRadius: 10 }}
+            />
           ))}
         </div>
       ) : speakers.length === 0 && !showCreate ? (
-        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <Users size={32} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+        <div
+          className="card"
+          style={{
+            padding: 40,
+            textAlign: "center",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <Users size={32} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
           <p style={{ margin: 0 }}>No hay conferencistas. Añade el primero.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {speakers.map((speaker) => (
             <div key={speaker._id}>
               {editingId === speaker._id ? (
                 <SpeakerForm
                   initial={{
                     names: speaker.names,
-                    role: speaker.role ?? '',
-                    organization: speaker.organization ?? '',
-                    description: speaker.description ?? '',
-                    imageUrl: speaker.imageUrl ?? '',
+                    role: speaker.role ?? "",
+                    organization: speaker.organization ?? "",
+                    description: speaker.description ?? "",
+                    descriptionEN: speaker.descriptionEN ?? "",
+                    imageUrl: speaker.imageUrl ?? "",
                     isInternational: speaker.isInternational ?? false,
                   }}
-                  onSave={(data) => updateMutation.mutate({ id: speaker._id, body: data })}
+                  onSave={(data) =>
+                    updateMutation.mutate({ id: speaker._id, body: data })
+                  }
                   onCancel={() => setEditingId(null)}
                   isPending={updateMutation.isPending}
                 />
@@ -309,9 +374,9 @@ export default function SpeakersPage() {
                 <div
                   className="card"
                   style={{
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
+                    padding: "12px 16px",
+                    display: "flex",
+                    alignItems: "center",
                     gap: 14,
                   }}
                 >
@@ -321,21 +386,32 @@ export default function SpeakersPage() {
                       src={speaker.imageUrl}
                       alt={speaker.names}
                       style={{
-                        width: 48, height: 48, borderRadius: '50%',
-                        objectFit: 'cover', flexShrink: 0,
-                        border: '1px solid var(--border)',
+                        width: 48,
+                        height: 48,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        flexShrink: 0,
+                        border: "1px solid var(--border)",
                       }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
                     />
                   ) : (
                     <div
                       style={{
-                        width: 48, height: 48, borderRadius: '50%',
-                        background: 'var(--accent-soft, #eff6ff)',
-                        color: 'var(--accent)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, fontSize: '1rem', flexShrink: 0,
-                        border: '1px solid var(--accent)',
+                        width: 48,
+                        height: 48,
+                        borderRadius: "50%",
+                        background: "var(--accent-soft, #eff6ff)",
+                        color: "var(--accent)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 700,
+                        fontSize: "1rem",
+                        flexShrink: 0,
+                        border: "1px solid var(--accent)",
                       }}
                     >
                       {getInitials(speaker.names)}
@@ -344,32 +420,57 @@ export default function SpeakersPage() {
 
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{speaker.names}</span>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, fontSize: "0.9375rem" }}>
+                        {speaker.names}
+                      </span>
                       {speaker.isInternational && (
-                        <span style={{
-                          fontSize: '0.6875rem', fontWeight: 600,
-                          color: '#1d4ed8', background: '#dbeafe',
-                          padding: '2px 8px', borderRadius: 20,
-                          border: '1px solid #93c5fd',
-                        }}>
+                        <span
+                          style={{
+                            fontSize: "0.6875rem",
+                            fontWeight: 600,
+                            color: "#1d4ed8",
+                            background: "#dbeafe",
+                            padding: "2px 8px",
+                            borderRadius: 20,
+                            border: "1px solid #93c5fd",
+                          }}
+                        >
                           Internacional
                         </span>
                       )}
                     </div>
                     {(speaker.role || speaker.organization) && (
-                      <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                        {[speaker.role, speaker.organization].filter(Boolean).join(' · ')}
+                      <p
+                        style={{
+                          margin: "2px 0 0",
+                          fontSize: "0.8125rem",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        {[speaker.role, speaker.organization]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                     )}
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                     <button
                       className="btn"
-                      style={{ fontSize: '0.8125rem' }}
-                      onClick={() => { setEditingId(speaker._id); setShowCreate(false) }}
+                      style={{ fontSize: "0.8125rem" }}
+                      onClick={() => {
+                        setEditingId(speaker._id);
+                        setShowCreate(false);
+                      }}
                     >
                       <Pencil size={12} /> Editar
                     </button>
@@ -377,15 +478,21 @@ export default function SpeakersPage() {
                       <>
                         <button
                           className="btn"
-                          style={{ fontSize: '0.8125rem', color: 'var(--error)', borderColor: 'var(--error)' }}
+                          style={{
+                            fontSize: "0.8125rem",
+                            color: "var(--error)",
+                            borderColor: "var(--error)",
+                          }}
                           onClick={() => deleteMutation.mutate(speaker._id)}
                           disabled={deleteMutation.isPending}
                         >
-                          {deleteMutation.isPending ? 'Eliminando...' : 'Confirmar'}
+                          {deleteMutation.isPending
+                            ? "Eliminando..."
+                            : "Confirmar"}
                         </button>
                         <button
                           className="btn"
-                          style={{ fontSize: '0.8125rem' }}
+                          style={{ fontSize: "0.8125rem" }}
                           onClick={() => setDeleteConfirmId(null)}
                         >
                           Cancelar
@@ -394,7 +501,7 @@ export default function SpeakersPage() {
                     ) : (
                       <button
                         className="btn"
-                        style={{ fontSize: '0.8125rem' }}
+                        style={{ fontSize: "0.8125rem" }}
                         onClick={() => setDeleteConfirmId(speaker._id)}
                       >
                         <Trash2 size={12} />
@@ -408,5 +515,5 @@ export default function SpeakersPage() {
         </div>
       )}
     </>
-  )
+  );
 }
