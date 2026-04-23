@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useRef } from 'react'
-import { ChevronLeft, Plus, Pencil, Trash2, Eye, EyeOff, BookOpen, ImageIcon } from 'lucide-react'
+import { ChevronLeft, Plus, Pencil, Trash2, Eye, EyeOff, BookOpen, ImageIcon, ChevronUp, ChevronDown } from 'lucide-react'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { usefulInfoService } from '@/services/useful-info'
@@ -88,6 +88,48 @@ export default function UsefulInfoPage() {
     },
   })
 
+  const reorderMutation = useMutation({
+    mutationFn: async ({ id, order }: { id: string; order: number }) => {
+      await usefulInfoService.update(id, { order })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['useful-info', eventId] })
+    },
+  })
+
+  // Get sorted items for reordering
+  const sortedItems = [...items].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+  const handleMoveUp = (item: UsefulInfo, index: number) => {
+    if (index === 0) return
+    const prevItem = sortedItems[index - 1]
+    // Swap orders
+    const tempOrder = item.order ?? 0
+    reorderMutation.mutate({
+      id: item._id,
+      order: prevItem.order ?? 0,
+    })
+    reorderMutation.mutate({
+      id: prevItem._id,
+      order: tempOrder,
+    })
+  }
+
+  const handleMoveDown = (item: UsefulInfo, index: number) => {
+    if (index === sortedItems.length - 1) return
+    const nextItem = sortedItems[index + 1]
+    // Swap orders
+    const tempOrder = item.order ?? 0
+    reorderMutation.mutate({
+      id: item._id,
+      order: nextItem.order ?? 0,
+    })
+    reorderMutation.mutate({
+      id: nextItem._id,
+      order: tempOrder,
+    })
+  }
+
   const handleEdit = (item: UsefulInfo) => {
     setForm({
       title: item.title,
@@ -116,7 +158,12 @@ export default function UsefulInfoPage() {
     if (editingId) {
       updateMutation.mutate({ id: editingId, body: form })
     } else {
-      createMutation.mutate(form)
+      // Calculate next order for new items
+      const maxOrder = items.length > 0 
+        ? Math.max(...items.map(item => item.order ?? 0))
+        : -1
+      const nextOrder = maxOrder + 1
+      createMutation.mutate({ ...form, order: nextOrder })
     }
   }
 
@@ -253,15 +300,17 @@ export default function UsefulInfoPage() {
                   style={{ textAlign: 'center', fontSize: '1.25rem' }}
                 />
               </div>
-              <div style={{ flex: 1 }}>
-                <label className="field-label">Orden</label>
-                <input
-                  type="number"
-                  value={form.order ?? 0}
-                  onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))}
-                  min={0}
-                />
-              </div>
+              {editingId && (
+                <div style={{ flex: 1 }}>
+                  <label className="field-label">Orden</label>
+                  <input
+                    type="number"
+                    value={form.order ?? 0}
+                    onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))}
+                    min={0}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Imagen de portada */}
@@ -379,7 +428,7 @@ export default function UsefulInfoPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {items.map((item: UsefulInfo) => (
+          {sortedItems.map((item: UsefulInfo, index: number) => (
             <div
               key={item._id}
               className="card"
@@ -418,6 +467,24 @@ export default function UsefulInfoPage() {
                 }}>
                   {item.isPublished ? 'Publicado' : 'Borrador'}
                 </span>
+                <button
+                  className="btn"
+                  style={{ fontSize: '0.8125rem' }}
+                  title="Mover arriba"
+                  onClick={() => handleMoveUp(item, index)}
+                  disabled={index === 0 || reorderMutation.isPending}
+                >
+                  <ChevronUp size={13} />
+                </button>
+                <button
+                  className="btn"
+                  style={{ fontSize: '0.8125rem' }}
+                  title="Mover abajo"
+                  onClick={() => handleMoveDown(item, index)}
+                  disabled={index === sortedItems.length - 1 || reorderMutation.isPending}
+                >
+                  <ChevronDown size={13} />
+                </button>
                 <button
                   className="btn"
                   style={{ fontSize: '0.8125rem' }}
