@@ -205,7 +205,7 @@ function SessionForm({
 function AgendaCard({
   agenda,
   index,
-  orgId,
+  //orgId,
   onDelete,
   onPublish,
   onUnpublish,

@@ -39,12 +39,13 @@ export function RichTextEditor({
   })
 
   // Sync external value changes (e.g. when switching between edit/new)
-  const prevValueRef = useRef(value)
   useEffect(() => {
-    if (editor && value !== prevValueRef.current && value !== editor.getHTML()) {
-      editor.commands.setContent(value, false)
+    if (!editor) return
+
+    const currentHTML = editor.getHTML()
+    if (value !== currentHTML) {
+      editor.commands.setContent(value, { emitUpdate: false })
     }
-    prevValueRef.current = value
   }, [editor, value])
 
   if (!editor) return null
