@@ -5,12 +5,13 @@ export interface Speaker {
   eventId: string;
   names: string;
   role?: string;
+  roleEN?: string;
   organization?: string;
   description?: string;
   descriptionEN?: string;
   location?: string;
   imageUrl?: string;
-  isInternational?: boolean;
+  country?: string;
 }
 
 export const speakersService = {

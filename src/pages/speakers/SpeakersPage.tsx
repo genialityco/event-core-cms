@@ -7,15 +7,17 @@ import { storage } from "@/lib/firebase";
 import { speakersService, type Speaker } from "@/services/speakers";
 import { eventsService } from "@/services/events";
 import { organizationsService } from "@/services/organizations";
+import { COUNTRY_OPTIONS } from "@/constants/countries";
 
 const EMPTY_FORM = {
   names: "",
   role: "",
+  roleEN: "",
   organization: "",
   description: "",
   descriptionEN: "",
   imageUrl: "",
-  isInternational: false,
+  country: "",
 };
 
 function SpeakerForm({
@@ -73,11 +75,21 @@ function SpeakerForm({
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <label className="field-label">Cargo / Posición</label>
+            <label className="field-label">Cargo / Posición (Español)</label>
             <input
               value={form.role}
               onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
               placeholder="Director General, CEO..."
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="field-label">Cargo / Posición (Inglés)</label>
+            <input
+              value={form.roleEN}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, roleEN: e.target.value }))
+              }
+              placeholder="General Director, CEO..."
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -166,28 +178,25 @@ function SpeakerForm({
             />
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            id="isInternational"
-            type="checkbox"
-            checked={form.isInternational}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, isInternational: e.target.checked }))
-            }
-            style={{ width: 16, height: 16, cursor: "pointer" }}
-          />
-          <label
-            htmlFor="isInternational"
-            style={{ fontSize: "0.875rem", cursor: "pointer" }}
+        <div>
+          <label className="field-label">País *</label>
+          <select
+            value={form.country}
+            onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
           >
-            Internacional
-          </label>
+            <option value="">Selecciona un país</option>
+            {COUNTRY_OPTIONS.map((country) => (
+              <option key={country} value={country}>
+                {country}
+              </option>
+            ))}
+          </select>
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
           <button
             className="btn btn-primary"
             onClick={() => onSave(form)}
-            disabled={!form.names || isPending || uploading}
+            disabled={!form.names || !form.country || isPending || uploading}
           >
             {isPending ? "Guardando..." : "Guardar"}
           </button>
@@ -358,11 +367,12 @@ export default function SpeakersPage() {
                   initial={{
                     names: speaker.names,
                     role: speaker.role ?? "",
+                    roleEN: speaker.roleEN ?? "",
                     organization: speaker.organization ?? "",
                     description: speaker.description ?? "",
                     descriptionEN: speaker.descriptionEN ?? "",
                     imageUrl: speaker.imageUrl ?? "",
-                    isInternational: speaker.isInternational ?? false,
+                    country: speaker.country ?? "",
                   }}
                   onSave={(data) =>
                     updateMutation.mutate({ id: speaker._id, body: data })
@@ -431,7 +441,7 @@ export default function SpeakersPage() {
                       <span style={{ fontWeight: 600, fontSize: "0.9375rem" }}>
                         {speaker.names}
                       </span>
-                      {speaker.isInternational && (
+                      {speaker.country && (
                         <span
                           style={{
                             fontSize: "0.6875rem",
@@ -443,11 +453,11 @@ export default function SpeakersPage() {
                             border: "1px solid #93c5fd",
                           }}
                         >
-                          Internacional
+                          {speaker.country}
                         </span>
                       )}
                     </div>
-                    {(speaker.role || speaker.organization) && (
+                    {(speaker.role || speaker.roleEN || speaker.organization) && (
                       <p
                         style={{
                           margin: "2px 0 0",
@@ -455,7 +465,7 @@ export default function SpeakersPage() {
                           color: "var(--text-secondary)",
                         }}
                       >
-                        {[speaker.role, speaker.organization]
+                        {[speaker.role, speaker.roleEN, speaker.organization]
                           .filter(Boolean)
                           .join(" · ")}
                       </p>
