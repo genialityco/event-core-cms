@@ -22,10 +22,13 @@ import { speakersService, type Speaker } from '@/services/speakers'
 interface Session {
   _id: string
   title: string
+  titleEn?: string
   startDateTime: string
   endDateTime: string
   room?: string
+  roomEn?: string
   typeSession?: string
+  typeSessionEn?: string
   requiresAttendance?: boolean
   speakers?: any[]
   speakerIds?: string[]
@@ -40,15 +43,20 @@ interface AgendaDoc {
   publishedAt?: string
   createdAt?: string
   dressCode?: string
+  dressCodeEn?: string
   room?: string
+  roomEn?: string
 }
 
 const EMPTY_SESSION = {
   title: '',
+  titleEn: '',
   startDateTime: '',
   endDateTime: '',
   room: '',
+  roomEn: '',
   typeSession: '',
+  typeSessionEn: '',
   requiresAttendance: false,
   speakerIds: [] as string[],
 }
@@ -99,6 +107,14 @@ function SessionForm({
             autoFocus
           />
         </div>
+        <div>
+          <label className="field-label">Título (Inglés)</label>
+          <input
+            value={form.titleEn}
+            onChange={(e) => setForm((f) => ({ ...f, titleEn: e.target.value }))}
+            placeholder="Session title"
+          />
+        </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1 }}>
             <label className="field-label">Inicio</label>
@@ -127,11 +143,29 @@ function SessionForm({
             />
           </div>
           <div style={{ flex: 1 }}>
+            <label className="field-label">Sala / Lugar (Inglés)</label>
+            <input
+              value={form.roomEn}
+              onChange={(e) => setForm((f) => ({ ...f, roomEn: e.target.value }))}
+              placeholder="Room A, Auditorium..."
+            />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
             <label className="field-label">Tipo</label>
             <input
               value={form.typeSession}
               onChange={(e) => setForm((f) => ({ ...f, typeSession: e.target.value }))}
               placeholder="Charla, Taller, Almuerzo..."
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="field-label">Tipo (Inglés)</label>
+            <input
+              value={form.typeSessionEn}
+              onChange={(e) => setForm((f) => ({ ...f, typeSessionEn: e.target.value }))}
+              placeholder="Talk, Workshop, Lunch..."
             />
           </div>
         </div>
@@ -239,7 +273,9 @@ function AgendaCard({
   const [deleteConfirmSessionId, setDeleteConfirmSessionId] = useState<string | null>(null)
   const [deleteConfirmAgenda, setDeleteConfirmAgenda] = useState(false)
   const [dressCodeDraft, setDressCodeDraft] = useState(agenda.dressCode ?? '')
+  const [dressCodeEnDraft, setDressCodeEnDraft] = useState(agenda.dressCodeEn ?? '')
   const [roomDraft, setRoomDraft] = useState(agenda.room ?? '')
+  const [roomEnDraft, setRoomEnDraft] = useState(agenda.roomEn ?? '')
 
   const handleEditSession = (session: Session) => {
     setEditingSessionId(session._id)
@@ -346,7 +382,7 @@ function AgendaCard({
       {!collapsed && (
         <div
           style={{
-            display: 'flex', gap: 12, padding: '8px 20px',
+            display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, padding: '8px 20px',
             background: 'var(--bg-secondary, #f8fafc)',
             borderBottom: '1px solid var(--border)',
           }}
@@ -362,12 +398,32 @@ function AgendaCard({
             />
           </div>
           <div style={{ flex: 1 }}>
+            <label className="field-label">Código de vestimenta (Inglés)</label>
+            <input
+              value={dressCodeEnDraft}
+              onChange={(e) => setDressCodeEnDraft(e.target.value)}
+              onBlur={() => onUpdateAgenda({ dressCodeEn: dressCodeEnDraft })}
+              placeholder="business casual, formal..."
+              style={{ marginTop: 2 }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
             <label className="field-label">Salón</label>
             <input
               value={roomDraft}
               onChange={(e) => setRoomDraft(e.target.value)}
               onBlur={() => onUpdateAgenda({ room: roomDraft })}
               placeholder="Auditorio, Salón A..."
+              style={{ marginTop: 2 }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="field-label">Salón (Inglés)</label>
+            <input
+              value={roomEnDraft}
+              onChange={(e) => setRoomEnDraft(e.target.value)}
+              onBlur={() => onUpdateAgenda({ roomEn: roomEnDraft })}
+              placeholder="Auditorium, Room A..."
               style={{ marginTop: 2 }}
             />
           </div>
@@ -389,6 +445,7 @@ function AgendaCard({
                     <SessionForm
                       initial={{
                         title: session.title,
+                        titleEn: session.titleEn ?? '',
                         startDateTime: session.startDateTime
                           ? new Date(session.startDateTime).toISOString().slice(0, 16)
                           : '',
@@ -396,7 +453,9 @@ function AgendaCard({
                           ? new Date(session.endDateTime).toISOString().slice(0, 16)
                           : '',
                         room: session.room ?? '',
+                        roomEn: session.roomEn ?? '',
                         typeSession: session.typeSession ?? '',
+                        typeSessionEn: session.typeSessionEn ?? '',
                         requiresAttendance: session.requiresAttendance ?? false,
                         speakerIds: session.speakers
                           ? session.speakers.map((s: any) => s._id ?? s)
@@ -425,6 +484,11 @@ function AgendaCard({
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{session.title}</span>
+                          {session.titleEn && (
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                              / {session.titleEn}
+                            </span>
+                          )}
                           {session.typeSession && (
                             <span style={{
                               fontSize: '0.6875rem',
@@ -435,6 +499,18 @@ function AgendaCard({
                               border: '1px solid var(--accent)',
                             }}>
                               {session.typeSession}
+                            </span>
+                          )}
+                          {session.typeSessionEn && (
+                            <span style={{
+                              fontSize: '0.6875rem',
+                              background: 'var(--bg)',
+                              color: 'var(--text-secondary)',
+                              padding: '1px 7px',
+                              borderRadius: 20,
+                              border: '1px solid var(--border)',
+                            }}>
+                              {session.typeSessionEn}
                             </span>
                           )}
                           {session.requiresAttendance && (
@@ -454,6 +530,7 @@ function AgendaCard({
                           {session.startDateTime && formatDateTime(session.startDateTime)}
                           {session.endDateTime && ` → ${formatDateTime(session.endDateTime)}`}
                           {session.room && ` · ${session.room}`}
+                          {session.roomEn && ` / ${session.roomEn}`}
                         </p>
                         {session.speakers && session.speakers.length > 0 && (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
@@ -607,10 +684,13 @@ export default function AgendaPage() {
       ...sessions,
       {
         title: newSession.title,
+        titleEn: newSession.titleEn || undefined,
         startDateTime: newSession.startDateTime || undefined,
         endDateTime: newSession.endDateTime || undefined,
         room: newSession.room || undefined,
+        roomEn: newSession.roomEn || undefined,
         typeSession: newSession.typeSession || undefined,
+        typeSessionEn: newSession.typeSessionEn || undefined,
         requiresAttendance: newSession.requiresAttendance,
         speakers: newSession.speakerIds,
       },
@@ -629,10 +709,13 @@ export default function AgendaPage() {
         ? {
             ...s,
             title: data.title,
+            titleEn: data.titleEn || undefined,
             startDateTime: data.startDateTime || s.startDateTime,
             endDateTime: data.endDateTime || s.endDateTime,
             room: data.room || undefined,
+            roomEn: data.roomEn || undefined,
             typeSession: data.typeSession || undefined,
+            typeSessionEn: data.typeSessionEn || undefined,
             requiresAttendance: data.requiresAttendance,
             speakers: data.speakerIds,
           }
