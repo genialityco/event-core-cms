@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsService } from '@/services/events'
 import { organizationsService } from '@/services/organizations'
-import { ChevronLeft, Plus, Radio, Settings, BedDouble, CalendarDays, Users, Info, Luggage, UserCheck } from 'lucide-react'
+import { ChevronLeft, Plus, Radio, Settings, BedDouble, CalendarDays, Users, Info, Luggage, UserCheck, Images } from 'lucide-react'
 import { useState } from 'react'
 import type { Event } from '@/types/event'
 
@@ -236,6 +236,14 @@ export default function EventsPage() {
                   >
                     <button className="btn" style={{ fontSize: '0.8125rem' }} title="Gestionar info útil">
                       <Info size={13} /> Info Útil
+                    </button>
+                  </Link>
+                  <Link
+                    to={`/organizations/${orgId}/events/${event._id}/photos`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <button className="btn" style={{ fontSize: '0.8125rem' }} title="Gestionar fotos">
+                      <Images size={13} /> Fotos
                     </button>
                   </Link>
                   <Link

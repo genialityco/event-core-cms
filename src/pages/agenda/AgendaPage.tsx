@@ -70,6 +70,21 @@ function formatDateTime(iso: string) {
     d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+function toDateTimeLocalValue(value: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join('-') + 'T' + [
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+  ].join(':')
+}
+
 // ─── Session Form ─────────────────────────────────────────────────────────────
 
 function SessionForm({
@@ -447,10 +462,10 @@ function AgendaCard({
                         title: session.title,
                         titleEn: session.titleEn ?? '',
                         startDateTime: session.startDateTime
-                          ? new Date(session.startDateTime).toISOString().slice(0, 16)
+                          ? toDateTimeLocalValue(session.startDateTime)
                           : '',
                         endDateTime: session.endDateTime
-                          ? new Date(session.endDateTime).toISOString().slice(0, 16)
+                          ? toDateTimeLocalValue(session.endDateTime)
                           : '',
                         room: session.room ?? '',
                         roomEn: session.roomEn ?? '',

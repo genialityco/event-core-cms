@@ -11,6 +11,7 @@ import AgendaPage from '@/pages/agenda/AgendaPage'
 import SpeakersPage from '@/pages/speakers/SpeakersPage'
 import UsefulInfoPage from '@/pages/useful-info/UsefulInfoPage'
 import PreRegistrationPage from '@/pages/pre-registration/PreRegistrationPage'
+import PhotosPage from '@/pages/photos/PhotosPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'organizations/:id/events/:eventId/agenda', element: <AgendaPage /> },
       { path: 'organizations/:id/events/:eventId/speakers', element: <SpeakersPage /> },
       { path: 'organizations/:id/events/:eventId/useful-info', element: <UsefulInfoPage /> },
+      { path: 'organizations/:id/events/:eventId/photos', element: <PhotosPage /> },
       // Pre-registro: accesible desde evento o desde org directamente
       { path: 'organizations/:id/events/:eventId/pre-registration', element: <PreRegistrationPage /> },
       { path: 'organizations/:id/pre-registration', element: <PreRegistrationPage /> },
