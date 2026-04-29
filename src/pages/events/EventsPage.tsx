@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsService } from '@/services/events'
 import { organizationsService } from '@/services/organizations'
-import { ChevronLeft, Plus, Radio, Settings, BedDouble, CalendarDays, Users, Info, Luggage, UserCheck, Images } from 'lucide-react'
+import { ChevronLeft, Plus, Radio, Settings, BedDouble, CalendarDays, Users, Info, Luggage, UserCheck, Images, UsersRound } from 'lucide-react'
 import { useState } from 'react'
 import type { Event } from '@/types/event'
 
@@ -178,7 +178,7 @@ export default function EventsPage() {
                 </div>
 
                 {/* Acciones */}
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                   {!isActive && (
                     <button
                       className="btn"
@@ -252,6 +252,14 @@ export default function EventsPage() {
                   >
                     <button className="btn" style={{ fontSize: '0.8125rem' }} title="Gestionar pre-registro">
                       <UserCheck size={13} /> Pre-registro
+                    </button>
+                  </Link>
+                  <Link
+                    to={`/organizations/${orgId}/attendance-required?eventId=${event._id}`}
+                    style={{ textDecoration: 'none', width: '100%', marginTop: 4 }}
+                  >
+                    <button className="btn" style={{ fontSize: '0.8125rem', width: '100%' }} title="Ver asistentes de sesiones con asistencia requerida">
+                      <UsersRound size={13} /> Asistentes
                     </button>
                   </Link>
                 </div>
